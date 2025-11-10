@@ -53,7 +53,7 @@ func (r *InmemProductRepo) UpdateStock(ctx context.Context, id int64, delta int3
 
 func (r *InmemProductRepo) BatchChangeStock(ctx context.Context, items []*product.StockChangeItem) error {
 	for _, i := range items {
-		r.data[i.ProductId].Stock += i.Delta
+		r.data[i.ProductId].Stock -= i.Delta
 	}
 
 	return nil
