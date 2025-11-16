@@ -5,9 +5,10 @@ import (
 	"log"
 	"net"
 
-	client "github.com/boretsotets/e-commerce-platform/order-service/cmd"
-	"github.com/boretsotets/e-commerce-platform/order-service/cmd/service"
-	"github.com/boretsotets/e-commerce-platform/order-service/internal/repository"
+	service "github.com/boretsotets/e-commerce-platform/order-service/internal/application/usecase"
+	client "github.com/boretsotets/e-commerce-platform/order-service/internal/infra/clients/productclient"
+	repository "github.com/boretsotets/e-commerce-platform/order-service/internal/infra/persistence"
+	controller "github.com/boretsotets/e-commerce-platform/order-service/internal/infra/transport/grpc"
 	pb "github.com/boretsotets/e-commerce-platform/order-service/pkg/api"
 	"google.golang.org/grpc"
 )
@@ -22,7 +23,8 @@ func main() {
 
 	repo := repository.NewInmemOrderRepo()
 	s := grpc.NewServer()
-	pb.RegisterOrderServiceServer(s, &service.OrderServer{Repo: repo, ProductClient: productClient})
+	orderservice := service.NewOrderServiceServer(repo, productClient)
+	pb.RegisterOrderServiceServer(s, &controller.OrderServer{Service: *orderservice})
 
 	fmt.Println("gRPC server listening on :50052")
 	if err := s.Serve(lis); err != nil {

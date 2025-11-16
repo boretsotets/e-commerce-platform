@@ -45,17 +45,6 @@ func (s *ProductServer) CreateProduct(ctx context.Context, req *pb.CreateProduct
 	}, nil
 }
 
-func (s *ProductServer) ChangeStock(ctx context.Context, req *pb.ChangeStockRequest) (*pb.ChangeStockResponse, error) {
-	response, err := s.Repo.UpdateStock(ctx, req.Id, req.Delta)
-	if err != nil {
-		return nil, err
-	}
-
-	return &pb.ChangeStockResponse{
-		Stock: response,
-	}, nil
-}
-
 func (s *ProductServer) BatchChangeStock(ctx context.Context, req *pb.BatchChangeStockRequest) (*emptypb.Empty, error) {
 	err := s.Repo.BatchChangeStock(ctx, req.Items)
 	return nil, err
