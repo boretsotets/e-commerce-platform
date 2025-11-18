@@ -9,6 +9,7 @@ service ProductService {
     rpc CreateProduct (CreateProductRequest) returns (CreateProductResponse);
     rpc ListProducts (ListProductsRequest) returns (ListProductsResponse);
     rpc BatchChangeStock (BatchChangeStockRequest) returns (google.protobuf.Empty);
+    rpc DeleteProduct (DeleteProductRequest) returns (google.protobuf.Empty);
 }
 
 message Product {
@@ -52,4 +53,8 @@ message ListProductsRequest {
 
 message ListProductsResponse {
     repeated Product products = 1;
+}
+
+message DeleteProductRequest {
+    int64 product_id = 1;
 }

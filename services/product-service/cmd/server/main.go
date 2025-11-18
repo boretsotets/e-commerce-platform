@@ -5,8 +5,9 @@ import (
 	"log"
 	"net"
 
-	"github.com/boretsotets/e-commerce-platform/product-service/internal/repository"
-	productgetter "github.com/boretsotets/e-commerce-platform/product-service/internal/service"
+	service "github.com/boretsotets/e-commerce-platform/product-service/internal/application/usecase"
+	repository "github.com/boretsotets/e-commerce-platform/product-service/internal/infra/persistence"
+	server "github.com/boretsotets/e-commerce-platform/product-service/internal/infra/transport/grpc"
 	pb "github.com/boretsotets/e-commerce-platform/product-service/pkg/api"
 	"google.golang.org/grpc"
 )
@@ -19,7 +20,9 @@ func main() {
 
 	repo := repository.NewInmemProductRepo()
 	s := grpc.NewServer()
-	pb.RegisterProductServiceServer(s, &productgetter.ProductServer{Repo: repo})
+	service := service.NewProductService(repo)
+
+	pb.RegisterProductServiceServer(s, &server.ProductServer{Service: *service})
 
 	fmt.Println("gRPC server listening on :50051")
 	if err := s.Serve(lis); err != nil {
