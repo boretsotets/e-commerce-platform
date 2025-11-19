@@ -5,10 +5,19 @@ import (
 	"errors"
 
 	"github.com/boretsotets/e-commerce-platform/product-service/internal/domain/models"
+	"gorm.io/gorm"
 )
 
 type InmemProductRepo struct {
 	data []*models.Product
+}
+
+type ProductRepo struct {
+	Repo *gorm.DB
+}
+
+func NewProductRepo(repo *gorm.DB) *ProductRepo {
+	return &ProductRepo{Repo: repo}
 }
 
 func NewInmemProductRepo() *InmemProductRepo {
@@ -20,6 +29,12 @@ func NewInmemProductRepo() *InmemProductRepo {
 	}
 }
 
+func (r *ProductRepo) GetById(ctx context.Context, id int64) (*models.Product, error) {
+	var p models.Product
+	err := r.Repo.WithContext(ctx).First(&p, id).Error
+	return &p, err
+}
+
 func (r *InmemProductRepo) GetById(ctx context.Context, id int64) (*models.Product, error) {
 	if id >= int64(len(r.data)) {
 		return nil, errors.New("not found")
@@ -27,7 +42,7 @@ func (r *InmemProductRepo) GetById(ctx context.Context, id int64) (*models.Produ
 	return r.data[id], nil
 }
 
-func (r *InmemProductRepo) CheckProductExsistance(ctx context.Context, name string) bool {
+func (r *InmemProductRepo) CheckProductExsistence(ctx context.Context, name string) bool {
 	for i := range r.data {
 		if r.data[i].Name == name {
 			return true

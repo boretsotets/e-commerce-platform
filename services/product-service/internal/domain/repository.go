@@ -8,7 +8,7 @@ import (
 
 type ProductRepository interface {
 	GetById(ctx context.Context, id int64) (*models.Product, error)
-	CheckProductExsistance(ctx context.Context, name string) bool
+	CheckProductExsistence(ctx context.Context, name string) bool
 	InsertNewProduct(ctx context.Context, name string, price float64, stock int32) (*models.Product, error)
 	UpdateStock(ctx context.Context, id int64, delta int32) (int32, error)
 	BatchChangeStock(ctx context.Context, items []*models.StockChangeItem) error

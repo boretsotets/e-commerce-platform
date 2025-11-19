@@ -1,0 +1,5 @@
+ALTER TABLE products
+ADD COLUMN ProductID SERIAL,
+ADD COLUMN ProductName TEXT NOT NULL,
+ADD COLUMN ProductPrice REAL,
+ADD COLUMN ProductStock INT;
