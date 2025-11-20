@@ -1,4 +1,4 @@
-package service
+package usecase
 
 import (
 	"context"
@@ -31,7 +31,7 @@ func (s *ProductService) GetProduct(ctx context.Context, id int64) (*models.Prod
 }
 
 func (s *ProductService) CreateProduct(ctx context.Context, ProductName string, ProductPrice float64, ProductStock int32) (*models.Product, error) {
-	productExsist := s.Repo.CheckProductExsistence(ctx, ProductName)
+	productExsist, err := s.Repo.CheckProductExsistence(ctx, ProductName)
 	if productExsist {
 		return nil, errors.New("Product with this ProductName already exists")
 	}

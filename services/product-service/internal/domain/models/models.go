@@ -1,7 +1,7 @@
 package models
 
 type Product struct {
-	ID    int64
+	ID    int64 `gorm:"primaryKey"`
 	Name  string
 	Price float64
 	Stock int32

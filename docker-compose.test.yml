@@ -1,0 +1,9 @@
+services:
+  product-service-repo:
+    image: postgres15-alpine
+    environment:
+      POSTGRES_USER: product_service_test
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: products
+    ports:
+      - "5432:5432"
