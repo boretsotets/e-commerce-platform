@@ -1,0 +1,28 @@
+services:
+  product-service-repo:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: product_service_test
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: products
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U product_service_test -d products"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  product_service_migrations:
+    image: migrate/migrate
+    command: [
+      "-path", "/migrations",
+      "-database", "postgres://product_service_test:password@product-service-repo:5432/products?sslmode=disable",
+      "up"
+    ]
+    volumes:
+      - ./services/product-service/migrations:/migrations
+    depends_on:
+      product-service-repo:
+        condition: service_healthy
+    restart: on-failure
