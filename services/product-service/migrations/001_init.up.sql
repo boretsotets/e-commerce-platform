@@ -1,1 +1,1 @@
-CREATE TABLE products;
+CREATE TABLE products (ID SERIAL PRIMARY KEY);

@@ -58,7 +58,8 @@ func (r *ProductRepo) InsertNewProduct(ctx context.Context, name string, price f
 func (r *ProductRepo) UpdateStock(ctx context.Context, id int64, delta int32) (int32, error) {
 	var p models.Product
 	err := r.Repo.WithContext(ctx).
-		Where("productID = ?", id).
+		Model(&p).
+		Where("ID = ?", id).
 		Clauses(clause.Returning{}).
 		Update("stock", delta).
 		Scan(&p).
@@ -71,9 +72,11 @@ func (r *ProductRepo) UpdateStock(ctx context.Context, id int64, delta int32) (i
 }
 
 func (r *ProductRepo) BatchChangeStock(ctx context.Context, items []*models.StockChangeItem) error {
+	var p models.Product
 	for _, item := range items {
 		err := r.Repo.WithContext(ctx).
-			Where("productID = ?", item.ProductID).
+			Model(&p).
+			Where("ID = ?", item.ProductID).
 			Update("stock", gorm.Expr("stock + ?", item.Delta)).
 			Error
 
