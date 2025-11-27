@@ -1,9 +1,9 @@
 package grpc
 
 import (
-	usecase "github.com/boretsotets/e-commerce-platform/order-service/internal/application/usecase"
-	domain "github.com/boretsotets/e-commerce-platform/order-service/internal/domain/model"
-	pb "github.com/boretsotets/e-commerce-platform/order-service/pkg/api"
+	usecase "github.com/boretsotets/e-commerce-platform/services/order-service/internal/application/usecase"
+	domain "github.com/boretsotets/e-commerce-platform/services/order-service/internal/domain/model"
+	pb "github.com/boretsotets/e-commerce-platform/services/order-service/pkg/api"
 
 	"context"
 )

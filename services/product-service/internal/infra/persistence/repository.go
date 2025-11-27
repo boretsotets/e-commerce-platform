@@ -26,7 +26,7 @@ func (r *ProductRepo) CheckProductExsistence(ctx context.Context, name string) (
 	var p models.Product
 	err := r.Repo.WithContext(ctx).Where("name = ?", name).First(&p).Error
 	if err != nil {
-		return false, err
+		return false, nil
 	}
 	return true, nil
 }

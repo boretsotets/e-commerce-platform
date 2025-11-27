@@ -4,8 +4,8 @@ import (
 	"context"
 	"log"
 
-	model "github.com/boretsotets/e-commerce-platform/order-service/internal/domain/model"
 	productpb "github.com/boretsotets/e-commerce-platform/product-service/pkg/api"
+	model "github.com/boretsotets/e-commerce-platform/services/order-service/internal/domain/model"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

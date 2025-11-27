@@ -3,7 +3,7 @@ package persistence
 import (
 	"fmt"
 
-	model "github.com/boretsotets/e-commerce-platform/order-service/internal/domain/model"
+	model "github.com/boretsotets/e-commerce-platform/services/order-service/internal/domain/model"
 )
 
 type InmemOrderRepo struct {

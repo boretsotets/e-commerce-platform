@@ -1,4 +1,4 @@
-package domain
+package model
 
 type Order struct {
 	ClientID        int64

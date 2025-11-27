@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 
-	"github.com/boretsotets/e-commerce-platform/order-service/internal/domain"
-	model "github.com/boretsotets/e-commerce-platform/order-service/internal/domain/model"
+	"github.com/boretsotets/e-commerce-platform/services/order-service/internal/domain"
+	model "github.com/boretsotets/e-commerce-platform/services/order-service/internal/domain/model"
 )
 
 type ProductService interface {

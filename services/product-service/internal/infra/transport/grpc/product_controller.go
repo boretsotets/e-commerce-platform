@@ -2,10 +2,13 @@ package server
 
 import (
 	"context"
+	"errors"
 
 	service "github.com/boretsotets/e-commerce-platform/product-service/internal/application/usecase"
 	"github.com/boretsotets/e-commerce-platform/product-service/internal/domain/models"
 	pb "github.com/boretsotets/e-commerce-platform/product-service/pkg/api"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -17,7 +20,7 @@ type ProductServer struct {
 func (s *ProductServer) GetProduct(ctx context.Context, req *pb.GetProductRequest) (*pb.GetProductResponse, error) {
 	product, err := s.Service.GetProduct(ctx, req.Id)
 	if err != nil {
-		return nil, err
+		return nil, mapError(err)
 	}
 	return &pb.GetProductResponse{
 		Product: &pb.Product{
@@ -32,7 +35,7 @@ func (s *ProductServer) GetProduct(ctx context.Context, req *pb.GetProductReques
 func (s *ProductServer) CreateProduct(ctx context.Context, req *pb.CreateProductRequest) (*pb.CreateProductResponse, error) {
 	product, err := s.Service.CreateProduct(ctx, req.Name, req.Price, req.Stock)
 	if err != nil {
-		return nil, err
+		return nil, mapError(err)
 	}
 	return &pb.CreateProductResponse{
 		Product: &pb.Product{
@@ -48,7 +51,7 @@ func (s *ProductServer) BatchChangeStock(ctx context.Context, req *pb.BatchChang
 	modelsStockChange := PbtomodelStockChangeItem(req.Items)
 	err := s.Service.BatchChangeStock(ctx, modelsStockChange)
 	if err != nil {
-		return nil, err
+		return nil, mapError(err)
 	}
 	return &emptypb.Empty{}, nil
 }
@@ -65,7 +68,7 @@ func PbtomodelStockChangeItem(pblist []*pb.StockChangeItem) []*models.StockChang
 func (s *ProductServer) ListProducts(ctx context.Context, req *pb.ListProductsRequest) (*pb.ListProductsResponse, error) {
 	productList, err := s.Service.ListProducts(ctx, req.Page, req.Limit)
 	if err != nil {
-		return nil, err
+		return nil, mapError(err)
 	}
 	return &pb.ListProductsResponse{
 		Products: PbtomodelProductList(productList),
@@ -86,7 +89,22 @@ func PbtomodelProductList(input []*models.Product) []*pb.Product {
 func (s *ProductServer) DeleteProduct(ctx context.Context, req *pb.DeleteProductRequest) (*emptypb.Empty, error) {
 	err := s.Service.DeleteProduct(ctx, req.ProductId)
 	if err != nil {
-		return nil, err
+		return nil, mapError(err)
 	}
 	return &emptypb.Empty{}, nil
+}
+
+func mapError(err error) error {
+	switch {
+	case errors.Is(err, service.ErrInvalidInput):
+		return status.Error(codes.InvalidArgument, "invalid input")
+	case errors.Is(err, service.ErrNotFound):
+		return status.Error(codes.NotFound, "not found")
+	case errors.Is(err, service.ErrConflict):
+		return status.Error(codes.AlreadyExists, "already exists")
+	case errors.Is(err, service.ErrNotEnoughStock):
+		return status.Error(codes.FailedPrecondition, "not enough stock")
+	default:
+		return status.Error(codes.Internal, "internal server error")
+	}
 }

@@ -49,6 +49,21 @@ func (mr *MockProductRepositoryMockRecorder) BatchChangeStock(ctx, items interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchChangeStock", reflect.TypeOf((*MockProductRepository)(nil).BatchChangeStock), ctx, items)
 }
 
+// CheckProductExsistence mocks base method.
+func (m *MockProductRepository) CheckProductExsistence(ctx context.Context, name string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckProductExsistence", ctx, name)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CheckProductExsistence indicates an expected call of CheckProductExsistence.
+func (mr *MockProductRepositoryMockRecorder) CheckProductExsistence(ctx, name interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckProductExsistence", reflect.TypeOf((*MockProductRepository)(nil).CheckProductExsistence), ctx, name)
+}
+
 // DeleteProduct mocks base method.
 func (m *MockProductRepository) DeleteProduct(ctx context.Context, productID int64) error {
 	m.ctrl.T.Helper()
@@ -79,18 +94,18 @@ func (mr *MockProductRepositoryMockRecorder) GetById(ctx, id interface{}) *gomoc
 }
 
 // GetList mocks base method.
-func (m *MockProductRepository) GetList(ctx context.Context, page, limit int32) ([]*models.Product, error) {
+func (m *MockProductRepository) GetList(ctx context.Context, offset, limit int32) ([]*models.Product, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetList", ctx, page, limit)
+	ret := m.ctrl.Call(m, "GetList", ctx, offset, limit)
 	ret0, _ := ret[0].([]*models.Product)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetList indicates an expected call of GetList.
-func (mr *MockProductRepositoryMockRecorder) GetList(ctx, page, limit interface{}) *gomock.Call {
+func (mr *MockProductRepositoryMockRecorder) GetList(ctx, offset, limit interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetList", reflect.TypeOf((*MockProductRepository)(nil).GetList), ctx, page, limit)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetList", reflect.TypeOf((*MockProductRepository)(nil).GetList), ctx, offset, limit)
 }
 
 // InsertNewProduct mocks base method.
