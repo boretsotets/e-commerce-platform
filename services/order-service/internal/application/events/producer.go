@@ -3,49 +3,61 @@ package events
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"time"
 
-	"github.com/boretsotets/e-commerce-platform/services/order-service/internal/domain/model"
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 )
 
 type Producer struct {
-	writer *kafka.Writer
+	p     *kafka.Producer
+	topic string
 }
 
-func NewProducer(broker string) *Producer {
-	return &Producer{
-		writer: &kafka.Writer{
-			Addr:     kafka.TCP(broker),
-			Topic:    "order.created",
-			Balancer: &kafka.LeastBytes{},
-		},
+func NewProducer(brokers, topic string) (*Producer, error) {
+	p, err := kafka.NewProducer(&kafka.ConfigMap{
+		"bootstrap.servers": brokers,
+	})
+	if err != nil {
+		return nil, err
 	}
+	return &Producer{p: p, topic: topic}, nil
 }
 
-func (p *Producer) PublishOrderCreated(ctx context.Context, order *model.Order) error {
-	event := EventOrderCreated{
-		OrderID:   int64(order.OrderID),
-		CreatedAt: time.Now(),
-	}
-
-	for _, item := range order.Items {
-		event.Items = append(event.Items, struct {
-			ProductID int64 "json:\"product_id\""
-			Qty       int32 "json:\"qty\""
-		}{
-			ProductID: item.ProductID,
-			Qty:       item.Count,
-		})
-	}
-	data, err := json.Marshal(event)
+func (pr *Producer) PublishOrderCreated(ctx context.Context, evt EventOrderCreated) error {
+	data, err := json.Marshal(evt)
 	if err != nil {
 		return err
 	}
 
-	return p.writer.WriteMessages(ctx, kafka.Message{
-		Key:   []byte(strconv.Itoa(order.OrderID)),
-		Value: data,
-	})
+	msg := &kafka.Message{
+		TopicPartition: kafka.TopicPartition{Topic: &pr.topic, Partition: kafka.PartitionAny},
+		Key:            []byte(strconv.Itoa(int(evt.OrderID))),
+		Value:          data,
+	}
+
+	deliveryChan := make(chan kafka.Event, 1)
+	err = pr.p.Produce(msg, deliveryChan)
+	if err != nil {
+		return err
+	}
+
+	select {
+	case ev := <-deliveryChan:
+		m := ev.(*kafka.Message)
+		if m.TopicPartition.Error != nil {
+			return m.TopicPartition.Error
+		}
+	case <-time.After(5 * time.Second):
+		return fmt.Errorf("kafka delivery timeout")
+	}
+
+	close(deliveryChan)
+	return nil
+}
+
+func (pr *Producer) Close() {
+	pr.p.Flush(10000)
+	pr.p.Close()
 }

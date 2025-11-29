@@ -29,7 +29,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, ClientID int64, Items []
 	if err != nil {
 		return nil, err
 	}
-	response, err := s.Repo.RepoCreateOrder(ClientID, Items, ShippingAddress)
+	response, err := s.Repo.RepoCreateOrder(ctx, ClientID, Items, ShippingAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func (s *OrderService) UpdateOrder(ctx context.Context, order *model.Order) (*mo
 	if err != nil {
 		return nil, err
 	}
-	response, err := s.Repo.RepoUpdateOrder(order, order.Items, order.Status, order.ShippingAddress)
+	response, err := s.Repo.RepoUpdateOrder(ctx, order, order.Items, order.Status, order.ShippingAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (s *OrderService) UpdateOrder(ctx context.Context, order *model.Order) (*mo
 }
 
 func (s *OrderService) GetOrder(ctx context.Context, OrderID int64) (*model.Order, error) {
-	response, err := s.Repo.RepoGetOrder(OrderID)
+	response, err := s.Repo.RepoGetOrder(ctx, OrderID)
 	if err != nil {
 		return nil, err
 	}
@@ -64,30 +64,30 @@ func (s *OrderService) GetOrder(ctx context.Context, OrderID int64) (*model.Orde
 }
 
 func (s *OrderService) ListOrders(ctx context.Context, ClientID int64) ([]*model.Order, error) {
-	response, err := s.Repo.RepoListOrders(ClientID)
+	response, err := s.Repo.RepoListOrders(ctx, ClientID)
 	if err != nil {
 		return nil, err
 	}
 	return response, nil
 }
 
-func (s *OrderService) DeleteOrder(ctx context.Context, orderID int64) (bool, error) {
+func (s *OrderService) DeleteOrder(ctx context.Context, orderID int64) error {
 	// need to update client stock
 	oldOrder, err := s.GetOrder(ctx, orderID)
 	if err != nil {
-		return false, err
+		return err
 	}
 	deltas := deltasForDelete(oldOrder.Items)
 	err = s.ProductClient.UpdateStock(ctx, deltas)
 	if err != nil {
-		return false, err
+		return err
 	}
 
-	response, err := s.Repo.RepoDeleteOrder(orderID)
+	err = s.Repo.RepoDeleteOrder(ctx, orderID)
 	if err != nil {
-		return false, err
+		return err
 	}
-	return response, nil
+	return nil
 }
 
 func CountDeltas(oldItems []*model.OrderItem, items []*model.OrderItem) []*model.OrderItem {

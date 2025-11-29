@@ -17,36 +17,6 @@ var (
 	ErrNotEnoughStock = errors.New("not enough stock")
 )
 
-type ErrInvalidID struct{}
-
-func (e ErrInvalidID) Error() string { return "id must be positive" }
-
-type ErrInvalidPrice struct{ Price float64 }
-
-func (e ErrInvalidPrice) Error() string { return fmt.Sprintf("price must be > 0, got %f", e.Price) }
-
-type ErrInvalidStock struct{ Stock int32 }
-
-func (e ErrInvalidStock) Error() string { return fmt.Sprintf("stock must be > 0, got %d", e.Stock) }
-
-type ErrInvalidPage struct{ Page int32 }
-
-func (e ErrInvalidPage) Error() string { return fmt.Sprintf("page must be > 0, got %d", e.Page) }
-
-type ErrInvalidLimit struct{ Limit int32 }
-
-func (e ErrInvalidLimit) Error() string { return fmt.Sprintf("limit must be > 0, got %d", e.Limit) }
-
-type ErrProductNotFound struct{}
-
-func (e ErrProductNotFound) Error() string { return "product not found" }
-
-type ErrProductNameDuplicate struct{ Name string }
-
-func (e ErrProductNameDuplicate) Error() string {
-	return fmt.Sprintf("product with product name %s already exists", e.Name)
-}
-
 type ProductService struct {
 	Repo domain.ProductRepository
 }
@@ -57,12 +27,12 @@ func NewProductService(Repo domain.ProductRepository) *ProductService {
 
 func (s *ProductService) GetProduct(ctx context.Context, id int64) (*models.Product, error) {
 	if id < 1 {
-		return nil, fmt.Errorf("%w: %v", ErrInvalidInput, ErrInvalidID{})
+		return nil, fmt.Errorf("%w: %v", ErrInvalidInput, "id must be positive")
 	}
 	response, err := s.Repo.GetById(ctx, id)
 	if err != nil {
 		if strings.Contains(err.Error(), "no rows") {
-			return nil, fmt.Errorf("%w: %v", ErrNotFound, ErrProductNotFound{})
+			return nil, fmt.Errorf("%w: %v", ErrNotFound, "product not found")
 		}
 		return nil, err
 	}
@@ -77,15 +47,15 @@ func (s *ProductService) GetProduct(ctx context.Context, id int64) (*models.Prod
 
 func (s *ProductService) CreateProduct(ctx context.Context, ProductName string, ProductPrice float64, ProductStock int32) (*models.Product, error) {
 	if ProductPrice <= 0 {
-		return nil, fmt.Errorf("%w: %v", ErrInvalidInput, ErrInvalidPrice{Price: ProductPrice})
+		return nil, fmt.Errorf("%w: price must be > 0, got %f", ErrInvalidInput, ProductPrice)
 	}
 	if ProductStock < 0 {
-		return nil, fmt.Errorf("%w: %v", ErrInvalidInput, ErrInvalidStock{Stock: ProductStock})
+		return nil, fmt.Errorf("%w: stock must be > 0, got %d", ErrInvalidInput, ProductStock)
 	}
 
 	productExsist, err := s.Repo.CheckProductExsistence(ctx, ProductName)
 	if productExsist {
-		return nil, fmt.Errorf("%w: %v", ErrConflict, ErrProductNameDuplicate{Name: ProductName})
+		return nil, fmt.Errorf("%w: product with product name %s already exists", ErrConflict, ProductName)
 	}
 
 	response, err := s.Repo.InsertNewProduct(ctx, ProductName, ProductPrice, ProductStock)
@@ -118,10 +88,10 @@ func (s *ProductService) BatchChangeStock(ctx context.Context, List []*models.St
 
 func (s *ProductService) ListProducts(ctx context.Context, Page int32, Limit int32) ([]*models.Product, error) {
 	if Page < 1 {
-		return nil, fmt.Errorf("%w: %v", ErrInvalidInput, ErrInvalidPage{Page: Page})
+		return nil, fmt.Errorf("%w: page must be > 0, got %d", ErrInvalidInput, Page)
 	}
 	if Limit < 1 {
-		return nil, fmt.Errorf("%w: %v", ErrInvalidInput, ErrInvalidLimit{Limit: Limit})
+		return nil, fmt.Errorf("%w: limit must be > 0, got %d", ErrInvalidInput, Limit)
 	}
 
 	response, err := s.Repo.GetList(ctx, Page, Limit)
@@ -135,14 +105,18 @@ func (s *ProductService) ListProducts(ctx context.Context, Page int32, Limit int
 func (s *ProductService) DeleteProduct(ctx context.Context, ProductID int64) error {
 	// error if deleting product that is in active order
 	if ProductID < 1 {
-		return fmt.Errorf("%w: %v", ErrInvalidInput, ErrInvalidID{})
+		return fmt.Errorf("%w: %v", ErrInvalidInput, "invalid id")
 	}
 	err := s.Repo.DeleteProduct(ctx, ProductID)
 	if err != nil {
 		if strings.Contains(err.Error(), "no rows") {
-			return fmt.Errorf("%w: %v", ErrNotFound, ErrProductNotFound{})
+			return fmt.Errorf("%w: %v", ErrNotFound, "product not found")
 		}
 		return err
 	}
+	return nil
+}
+
+func (s *ProductService) ApplyOrderEvent(ctx context.Context, evt models.EventOrderCreated) error {
 	return nil
 }

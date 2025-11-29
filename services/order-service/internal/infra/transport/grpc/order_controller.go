@@ -103,11 +103,11 @@ func (c *OrderServer) ListOrders(ctx context.Context, req *pb.ListOrdersRequest)
 }
 
 func (c *OrderServer) DeleteOrder(ctx context.Context, req *pb.DeleteOrderRequest) (*pb.DeleteOrderResponse, error) {
-	success, err := c.Service.DeleteOrder(ctx, req.OrderId)
+	err := c.Service.DeleteOrder(ctx, req.OrderId)
 	if err != nil {
 		return nil, err
 	}
 	return &pb.DeleteOrderResponse{
-		Success: success,
+		Success: true,
 	}, nil
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/boretsotets/e-commerce-platform/product-service/internal/infra/db"
 )
 
-func TestGetByID(t *testing.T) {
+func TestRepo(t *testing.T) {
 	ctx := context.Background()
 
 	db, err := db.NewTestPostgres()

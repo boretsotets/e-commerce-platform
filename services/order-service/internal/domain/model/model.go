@@ -1,9 +1,9 @@
 package model
 
 type Order struct {
+	OrderID         int64 `gorm:"primaryKey"`
 	ClientID        int64
-	OrderID         int64
-	Items           []*OrderItem
+	Items           []*OrderItem `gorm:"foreignKey:OrderID"`
 	Status          string
 	ShippingAddress string
 }
