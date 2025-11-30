@@ -2,6 +2,8 @@ package persistence
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	model "github.com/boretsotets/e-commerce-platform/services/order-service/internal/domain/model"
 	"gorm.io/gorm"
@@ -23,8 +25,17 @@ type OrderItemDB struct {
 	Count     int32
 }
 
+type OrderDB struct {
+	OrderID         int64 `gorm:"primaryKey"`
+	ClientID        int64
+	Status          string
+	ShippingAddress string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+}
+
 func (r *OrderRepo) RepoCreateOrder(ctx context.Context, clientId int64, items []*model.OrderItem, shippingAddress string) (*model.Order, error) {
-	orderDB := &model.Order{
+	orderDB := &OrderDB{
 		ClientID:        clientId,
 		ShippingAddress: shippingAddress,
 		Status:          "created",
@@ -58,11 +69,17 @@ func (r *OrderRepo) RepoCreateOrder(ctx context.Context, clientId int64, items [
 		return nil, err
 	}
 
-	return orderDB, nil
+	return &model.Order{
+		OrderID:         orderDB.OrderID,
+		ClientID:        orderDB.ClientID,
+		Items:           items,
+		Status:          orderDB.Status,
+		ShippingAddress: orderDB.ShippingAddress,
+	}, nil
 }
 
 func (r *OrderRepo) RepoGetOrder(ctx context.Context, id int64) (*model.Order, error) {
-	var order model.Order
+	var order OrderDB
 	err := r.Repo.WithContext(ctx).First(&order, id).Error
 	if err != nil {
 		return nil, err
@@ -82,22 +99,25 @@ func (r *OrderRepo) RepoGetOrder(ctx context.Context, id int64) (*model.Order, e
 		})
 	}
 
-	order.Items = orderItems
-
-	return &order, nil
+	return &model.Order{
+		OrderID:         order.OrderID,
+		ClientID:        order.ClientID,
+		Items:           orderItems,
+		Status:          order.Status,
+		ShippingAddress: order.ShippingAddress,
+	}, nil
 }
 
 func (r *OrderRepo) RepoUpdateOrder(ctx context.Context, oldorder *model.Order, items []*model.OrderItem, status string, shippingAddress string) (*model.Order, error) {
-	var order model.Order
-
 	tx := r.Repo.Begin()
 	if tx.Error != nil {
 		return nil, tx.Error
 	}
 
+	var orderDB OrderDB
 	if err := tx.WithContext(ctx).
-		Where("ID = ?", oldorder.OrderID).
-		Model(&order).
+		Where("order_id = ?", oldorder.OrderID).
+		Model(&orderDB).
 		Clauses(clause.Returning{}).
 		Update("status", status).
 		Update("shippingAddress", shippingAddress).
@@ -106,50 +126,83 @@ func (r *OrderRepo) RepoUpdateOrder(ctx context.Context, oldorder *model.Order, 
 		return nil, err
 	}
 
-	var orderItemsDB *OrderItemDB
-	for _, v := range items {
-		if err := tx.WithContext(ctx).
-			Where("order_id = ?", oldorder.OrderID).
-			Where("product_id = ?", v.ProductID).
-			Model(&orderItemsDB).
-			Clauses(clause.Returning{}).
-			Update("count", v.Count).
-			Error; err != nil {
-			tx.Rollback()
-			return nil, err
-		}
-		order.Items = append(order.Items, v)
+	var orderItemDB *OrderItemDB
+	caseStmt := "CASE product_id "
+	ids := []int{}
+
+	for _, item := range items {
+		caseStmt += fmt.Sprintf("WHEN %d THEN %d ", item.ProductID, item.Count)
+		ids = append(ids, int(item.ProductID))
+	}
+	caseStmt += "ELSE count END"
+
+	if err := tx.WithContext(ctx).
+		Model(&orderItemDB).
+		Where("order_id = ?", oldorder.OrderID).
+		Where("product_id IN ?", ids).
+		Update("count", gorm.Expr(caseStmt)).
+		Error; err != nil {
+		tx.Rollback()
+		return nil, err
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		return nil, err
 	}
 
-	return &order, nil
-}
-
-func (r *OrderRepo) RepoListOrders(ctx context.Context, clientId int64) ([]*model.Order, error) {
-	var orders []*model.Order
-	if err := r.Repo.WithContext(ctx).Where("ID = ?", clientId).Find(&orders).Error; err != nil {
+	var orderItemsDB []*OrderItemDB
+	if err := r.Repo.WithContext(ctx).Where("order_id = ?", oldorder.OrderID).Find(&orderItemsDB).Error; err != nil {
 		return nil, err
 	}
 
-	var orderItemDB OrderItemDB
-	for i, v := range orders {
-		if err := r.Repo.WithContext(ctx).Where("order_id = ?", v.OrderID).Find(&orderItemDB).Error; err != nil {
+	order := &model.Order{
+		OrderID:         orderDB.OrderID,
+		ClientID:        orderDB.ClientID,
+		Status:          orderDB.Status,
+		ShippingAddress: orderDB.ShippingAddress,
+	}
+	for _, v := range orderItemsDB {
+		order.Items = append(order.Items, &model.OrderItem{
+			ProductID: v.ProductID,
+			Count:     v.Count,
+		})
+	}
+
+	return order, nil
+}
+
+func (r *OrderRepo) RepoListOrders(ctx context.Context, clientId int64) ([]*model.Order, error) {
+	var ordersDB []*OrderDB
+	if err := r.Repo.WithContext(ctx).Where("client_id = ?", clientId).Find(&ordersDB).Error; err != nil {
+		return nil, err
+	}
+	var orders []*model.Order
+
+	var orderItemsDB []*OrderItemDB
+	for i, v := range ordersDB {
+		if err := r.Repo.WithContext(ctx).Where("order_id = ?", v.OrderID).Find(&orderItemsDB).Error; err != nil {
 			return nil, err
 		}
-		orders[i].Items = append(orders[i].Items, &model.OrderItem{
-			ProductID: orderItemDB.ProductID,
-			Count:     orderItemDB.Count,
+		orders = append(orders, &model.Order{
+			OrderID:         v.OrderID,
+			ClientID:        v.ClientID,
+			ShippingAddress: v.ShippingAddress,
+			Status:          v.Status,
 		})
+		for _, val := range orderItemsDB {
+			orders[i].Items = append(orders[i].Items, &model.OrderItem{
+				ProductID: val.ProductID,
+				Count:     val.Count,
+			})
+
+		}
 	}
 
 	return orders, nil
 }
 
 func (r *OrderRepo) RepoDeleteOrder(ctx context.Context, orderId int64) error {
-	var order model.Order
+	var order OrderDB
 	err := r.Repo.WithContext(ctx).Find(&order, orderId).Error
 	if err != nil {
 		return err
@@ -160,13 +213,13 @@ func (r *OrderRepo) RepoDeleteOrder(ctx context.Context, orderId int64) error {
 		return tx.Error
 	}
 
-	if err := tx.WithContext(ctx).Delete(&order).Error; err != nil {
+	var orderItem *OrderItemDB
+	if err := tx.WithContext(ctx).Where("order_id = ?", orderId).Delete(&orderItem).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	var orderItem *OrderItemDB
-	if err := tx.WithContext(ctx).Where("order_id = ?", orderId).Delete(&orderItem).Error; err != nil {
+	if err := tx.WithContext(ctx).Delete(&order).Error; err != nil {
 		tx.Rollback()
 		return err
 	}

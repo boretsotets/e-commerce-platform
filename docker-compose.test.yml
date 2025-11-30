@@ -35,7 +35,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: orders
     ports:
-      - "5432:5433"
+      - "5433:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U order_service_test -d orders"]
       interval: 10s
@@ -45,7 +45,7 @@ services:
     image: migrate/migrate
     command: [
       "-path", "/migrations",
-      "-database", "postgres://order_service_test:password@order-service-repo:5433/orders?sslmode=disable",
+      "-database", "postgres://order_service_test:password@order-service-repo:5432/orders?sslmode=disable",
       "up"
     ]
     volumes:

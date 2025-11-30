@@ -1,5 +1,6 @@
-CREATE TABLE order_items
-ADD COLUMN id BIGSERIAL PRIMARY KEY,
-ADD COLUMN order_id BIGSERIAL NOT NULL REFERENCES orders(order_id),
-ADD COLUMN product_id BIGINT NOT NULL,
-ADD COLUMN count INT NOT NULL;
+CREATE TABLE order_item_dbs (
+    id BIGSERIAL PRIMARY KEY,
+    order_id BIGSERIAL NOT NULL REFERENCES order_dbs(order_id),
+    product_id BIGINT NOT NULL,
+    count INT NOT NULL
+);

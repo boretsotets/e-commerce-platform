@@ -1,7 +1,8 @@
-CREATE TABLE orders
-ADD COLUMN order_id BIGSERIAL PRIMARY KEY,
-ADD COLUMN client_id BIGINT NOT NULL,
-ADD COLUMN "Status" TEXT NOT NULL,
-ADD COLUMN ShippingAddress TEXT,
-ADD COLUMN created_at TIMESTAMP DEFAULT now(),
-ADD COLUMN updated_at TIMESTAMP DEFAULT now();
+CREATE TABLE order_dbs (
+    order_id BIGSERIAL PRIMARY KEY,
+    client_id BIGINT NOT NULL,
+    "status" TEXT NOT NULL,
+    shipping_address TEXT,
+    created_at TIMESTAMP DEFAULT now(),
+    updated_at TIMESTAMP DEFAULT now()
+);

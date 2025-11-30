@@ -1,5 +1,6 @@
-CREATE TABLE products
-ADD COLUMN id BIGSERIAL PRIMARY KEY,
-ADD COLUMN "name" TEXT NOT NULL,
-ADD COLUMN price REAL,
-ADD COLUMN stock INT;
+CREATE TABLE products (
+    id BIGSERIAL PRIMARY KEY,
+    "name" TEXT NOT NULL,
+    price REAL,
+    stock INT
+);
